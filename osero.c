@@ -33,6 +33,7 @@ int main(){
 	int turn = PLAYER_B;
 	int no_black = 0, no_white = 0;
 	_Bool* IsThereCanTurn;
+	_Bool IsFinalTurn = FALSE;
 
 	for(int i=0; i<8; i++){
 		for(int r=0; r<8; r++){
@@ -44,7 +45,7 @@ int main(){
 	piece[4][3] = PLAYER_B;
 	piece[4][4] = PLAYER_W;
 
-	for(int count=0; count<75;){
+	for(int count=0; count<100;){
 		for(int i=0; i<8; i++){
 			for(int r=0; r<8; r++)
 				IsThereCanTurn = piece_check(piece, i, r, &turn, &count);
@@ -52,9 +53,12 @@ int main(){
 		piece[player_y][player_x] *= 2;
 		show(piece, turn);
 		piece[player_y][player_x] /= 2;
+		if(*IsThereCanTurn == FALSE && IsFinalTurn == TRUE)
+			count = 99;
 		if(*IsThereCanTurn == FALSE){
 			count++;
 			turn*=-1;
+			IsFinalTurn = TRUE;
 			continue;
 		}
 		printf("Œ»Ý‚Ìƒ^[ƒ“F");

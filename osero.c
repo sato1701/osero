@@ -10,15 +10,16 @@
 #define KB_ENTER 0x000D
 #define EXIT 0x001b
 
-enum Piece {	PLAYER_W = -1,
-				PLAYER_B = 1,
-				CHOSEN_W = -2,
-				CHOSEN_B = 2,
-				NOTHING = 5,
-				CANTURN = 3,
-				CHOSEN_CANT = 6,
-				CHOSEN_NO = 10
-			};
+enum Piece {
+	PLAYER_W = -1,
+	PLAYER_B = 1,
+	CHOSEN_W = -2,
+	CHOSEN_B = 2,
+	NOTHING = 5,
+	CANTURN = 3,
+	CHOSEN_CANT = 6,
+	CHOSEN_NO = 10
+};
 
 void show(const int[8][8], int);
 void get_cursor(int[8][8], int*, int*, int*, int*);
@@ -74,9 +75,7 @@ int main(){
 		}
 	}
 	show(piece, turn);
-	printf( "\n"
-			"黒：%d\t白：%d\n"
-			"で", no_black, no_white);
+	printf( "\n" "黒：%d\t白：%d\n" "で", no_black, no_white);
 	if(no_black > no_white)
 		printf("黒の勝ち!!\n");
 	if(no_black == no_white)

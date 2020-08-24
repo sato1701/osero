@@ -10,24 +10,23 @@
 #define KB_ENTER 0x000D
 #define EXIT 0x001b
 
-enum Piece {
+enum Piece {	//オセロの駒の種類
 	PLAYER_W = -1,
 	PLAYER_B = 1,
 	CHOSEN_W = -2,
 	CHOSEN_B = 2,
 	NOTHING = 5,
 	CANTURN = 3,
-	CHOSEN_CANT = 6,
+	CHOSEN_CAN = 6,
 	CHOSEN_NO = 10
-};
+} piece[8][8];
 
-void show(const int[8][8], int);
-void get_cursor(int[8][8], int*, int*, int*, int*);
-void piece_flip(int[8][8], int ,int, int*, int*);
-_Bool* piece_check(int[8][8], int ,int, int*, int*);
+void show(int);
+void get_cursor(int*, int*, int*, int*);
+void piece_flip(int ,int, int*, int*);
+_Bool* piece_check(int ,int, int*, int*);
 
 int main(){
-	enum Piece piece[8][8];
 	int player_x = 0;
 	int player_y = 0;
 	int turn = PLAYER_B;
@@ -48,11 +47,11 @@ int main(){
 	for(int count=0; count<100;){
 		for(int i=0; i<8; i++){
 			for(int r=0; r<8; r++)
-				IsThereCanTurn = piece_check(piece, i, r, &turn, &count);
+				IsThereCanTurn = piece_check(i, r, &turn, &count);
 		}
-		piece[player_y][player_x] *= 2;
-		show(piece, turn);
-		piece[player_y][player_x] /= 2;
+		piece[player_y][player_x] *= 2;	//playerの位置の駒を、cHOSENに
+		show(turn);
+		piece[player_y][player_x] /= 2;	//playerの駒を、もとに
 		if(*IsThereCanTurn == FALSE && IsFinalTurn == TRUE)
 			count = 99;
 		if(*IsThereCanTurn == FALSE){
@@ -67,7 +66,7 @@ int main(){
 			if(turn == PLAYER_W)
 		printf("白\n");
 
-		get_cursor(piece, &player_y, &player_x, &turn, &count);
+		get_cursor(&player_y, &player_x, &turn, &count);
 		*IsThereCanTurn = FALSE;
 	}
 	for(int i=0; i<8; i++){
@@ -78,7 +77,7 @@ int main(){
 				no_white++;
 		}
 	}
-	show(piece, turn);
+	show(turn);
 	printf( "\n" "黒：%d\t白：%d\n" "で", no_black, no_white);
 	if(no_black > no_white)
 		printf("黒の勝ち!!\n");
@@ -89,19 +88,18 @@ int main(){
 	getch();
 }
 
-void show(const int piece_array[8][8], int turn){
+void show(int turn){
 	system("cls");
 	printf("The オセロ！\n\n");
 	printf("＋");
-	for(int i=0; i<8; i++){
+	for(int i=0; i<8; i++)
 		printf("--");
-	}
 	printf("＋\n");
 
 	for(int i=0; i<8; i++){
 		printf("｜");
 		for(int r=0; r<8; r++){
-			switch(piece_array[i][r]){
+			switch(piece[i][r]){
 				case CHOSEN_W:
 					printf("★");
 					break;
@@ -123,7 +121,7 @@ void show(const int piece_array[8][8], int turn){
 				case CANTURN:
 					printf("・");
 					break;
-				case CHOSEN_CANT:
+				case CHOSEN_CAN:
 					printf("◎");
 					break;
 			}
@@ -132,13 +130,12 @@ void show(const int piece_array[8][8], int turn){
 	}
 
 	printf("＋");
-	for(int i=0; i<8; i++){
+	for(int i=0; i<8; i++)
 		printf("--");
-	}
 	printf("＋\n\n");
 }
 
-void get_cursor(int piece_array[8][8], int *player_y, int *player_x, int *turn, int *count){
+void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 	CONTINUE:
 	switch(getch()){
 		case KB_UP:
@@ -154,7 +151,7 @@ void get_cursor(int piece_array[8][8], int *player_y, int *player_x, int *turn, 
 			if(*player_y<7)	*player_y+=1;
 			break;
 		case KB_ENTER:
-			piece_flip(piece_array, *player_y, *player_x, turn, count);
+			piece_flip(*player_y, *player_x, turn, count);
 			return;
 		case EXIT:
 			printf("\n緊急終了！！\n");
@@ -163,87 +160,87 @@ void get_cursor(int piece_array[8][8], int *player_y, int *player_x, int *turn, 
 	}
 }
 
-_Bool* piece_check(int array[8][8], int point_y, int point_x, int *turn, int *count){
+_Bool* piece_check(int point_y, int point_x, int *turn, int *count){
 	//WANT もっと短く！
 	static _Bool IsThereCanTurn = FALSE;
 
-	if(array[point_y][point_x] == CANTURN)
-		array[point_y][point_x] = NOTHING;
+	if(piece[point_y][point_x] == CANTURN)
+		piece[point_y][point_x] = NOTHING;
 
-	if(1 < point_y && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y-i][point_x] == -*turn; i++){	//上
-			if(array[point_y-i-1][point_x] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(1 < point_y && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
+			if(piece[point_y-i-1][point_x] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(point_y < 6 && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y+i][point_x] == -*turn; i++){		//下
-			if(array[point_y+i+1][point_x] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(point_y < 6 && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y+i][point_x] == -*turn; i++){		//下
+			if(piece[point_y+i+1][point_x] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(1 < point_x && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y][point_x-i] == -*turn; i++){	//左
-			if(array[point_y][point_x-i-1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(1 < point_x && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y][point_x-i] == -*turn; i++){	//左
+			if(piece[point_y][point_x-i-1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(point_x < 6 && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y][point_x+i] == -*turn; i++){		//右
-			if(array[point_y][point_x+i+1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(point_x < 6 && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y][point_x+i] == -*turn; i++){		//右
+			if(piece[point_y][point_x+i+1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(1 < point_y && 1 < point_x && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y-i][point_x-i] == -*turn; i++){		//左上
-			if(array[point_y-i-1][point_x-i-1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(1 < point_y && 1 < point_x && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y-i][point_x-i] == -*turn; i++){		//左上
+			if(piece[point_y-i-1][point_x-i-1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(1 < point_y && point_x < 6 && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y-i][point_x+i] == -*turn; i++){		//右上
-			if(array[point_y-i-1][point_x+i+1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(1 < point_y && point_x < 6 && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y-i][point_x+i] == -*turn; i++){		//右上
+			if(piece[point_y-i-1][point_x+i+1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(point_y < 6 && 1 < point_x && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y+i][point_x-i] == -*turn; i++){		//左下
-			if(array[point_y+i+1][point_x-i-1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(point_y < 6 && 1 < point_x && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y+i][point_x-i] == -*turn; i++){		//左下
+			if(piece[point_y+i+1][point_x-i-1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
 		}
 	}
 
-	if(point_y < 6 && point_x < 6 && array[point_y][point_x] == NOTHING){
-		for(int i=1; array[point_y+i][point_x+i] == -*turn; i++){		//右下
-			if(array[point_y+i+1][point_x+i+1] == *turn){
-				array[point_y][point_x] = CANTURN;
+	if(point_y < 6 && point_x < 6 && piece[point_y][point_x] == NOTHING){
+		for(int i=1; piece[point_y+i][point_x+i] == -*turn; i++){		//右下
+			if(piece[point_y+i+1][point_x+i+1] == *turn){
+				piece[point_y][point_x] = CANTURN;
 				IsThereCanTurn = TRUE;
 				break;
 			}
@@ -252,15 +249,15 @@ _Bool* piece_check(int array[8][8], int point_y, int point_x, int *turn, int *co
 	return &IsThereCanTurn;
 }
 
-void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count){
+void piece_flip(int point_y, int point_x, int *turn, int *count){
 	int tmp;
 	_Bool WasTurn = FALSE;
 	//WANT もっと短く！
 
 	tmp = 0;
-	if(1 < point_y && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y-i][point_x] == -*turn; i++){	//上
-			if(array[point_y-i-1][point_x] == *turn){
+	if(1 < point_y && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
+			if(piece[point_y-i-1][point_x] == *turn){
 				tmp = i;
 				break;
 			}
@@ -268,14 +265,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y-i][point_x] *= -1;
+			piece[point_y-i][point_x] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(point_y < 6 && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y+i][point_x] == -*turn; i++){		//下
-			if(array[point_y+i+1][point_x] == *turn){
+	if(point_y < 6 && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y+i][point_x] == -*turn; i++){		//下
+			if(piece[point_y+i+1][point_x] == *turn){
 				tmp = i;
 				break;
 			}
@@ -283,14 +280,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y+i][point_x] *= -1;
+			piece[point_y+i][point_x] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(1 < point_x && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y][point_x-i] == -*turn && 0<point_x-i; i++){	//左
-			if(array[point_y][point_x-i-1] == *turn){
+	if(1 < point_x && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y][point_x-i] == -*turn && 0<point_x-i; i++){	//左
+			if(piece[point_y][point_x-i-1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -298,14 +295,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y][point_x-i] *= -1;
+			piece[point_y][point_x-i] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(point_x < 6 && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y][point_x+i] == -*turn && point_x+i<7; i++){	//右
-			if(array[point_y][point_x+i+1] == *turn){
+	if(point_x < 6 && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y][point_x+i] == -*turn && point_x+i<7; i++){	//右
+			if(piece[point_y][point_x+i+1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -313,14 +310,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y][point_x+i] *= -1;
+			piece[point_y][point_x+i] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(1 < point_y && 1 < point_x && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y-i][point_x-i] == -*turn && 0<point_x-i; i++){//左上
-			if(array[point_y-i-1][point_x-i-1] == *turn){
+	if(1 < point_y && 1 < point_x && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y-i][point_x-i] == -*turn && 0<point_x-i; i++){//左上
+			if(piece[point_y-i-1][point_x-i-1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -328,14 +325,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y-i][point_x-i] *= -1;
+			piece[point_y-i][point_x-i] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(1 < point_y && point_x < 6 && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y-i][point_x+i] == -*turn && point_x+i<7; i++){//右上
-			if(array[point_y-i-1][point_x+i+1] == *turn){
+	if(1 < point_y && point_x < 6 && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y-i][point_x+i] == -*turn && point_x+i<7; i++){//右上
+			if(piece[point_y-i-1][point_x+i+1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -343,14 +340,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y-i][point_x+i] *= -1;
+			piece[point_y-i][point_x+i] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(point_y < 6 && 1 < point_x && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y+i][point_x-i] == -*turn && 0<point_x-i; i++){//左下
-			if(array[point_y+i+1][point_x-i-1] == *turn){
+	if(point_y < 6 && 1 < point_x && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y+i][point_x-i] == -*turn && 0<point_x-i; i++){//左下
+			if(piece[point_y+i+1][point_x-i-1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -358,14 +355,14 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y+i][point_x-i] *= -1;
+			piece[point_y+i][point_x-i] *= -1;
 		}
 	}
 
 	tmp = 0;
-	if(point_y < 6 && point_x < 6 && array[point_y][point_x] == CANTURN){
-		for(int i=1; array[point_y+i][point_x+i] == -*turn && point_x+i<7; i++){//右下
-			if(array[point_y+i+1][point_x+i+1] == *turn){
+	if(point_y < 6 && point_x < 6 && piece[point_y][point_x] == CANTURN){
+		for(int i=1; piece[point_y+i][point_x+i] == -*turn && point_x+i<7; i++){//右下
+			if(piece[point_y+i+1][point_x+i+1] == *turn){
 				tmp = i;
 				break;
 			}
@@ -373,12 +370,12 @@ void piece_flip(int array[8][8], int point_y, int point_x, int *turn, int *count
 		for(int i=1; i<=tmp; i++){
 			if(WasTurn == FALSE)
 				WasTurn = TRUE;
-			array[point_y+i][point_x+i] *= -1;
+			piece[point_y+i][point_x+i] *= -1;
 		}
 	}
 
 	if(WasTurn){
-		array[point_y][point_x] = *turn;
+		piece[point_y][point_x] = *turn;
 		*turn *= -1;
 		*count+=1;
 	}

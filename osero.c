@@ -9,6 +9,7 @@
 #define KB_RIGHT 0x004d
 #define KB_ENTER 0x000D
 #define EXIT 0x001b
+#define OSERO_FIELD 10
 
 enum Piece {	//オセロの駒の種類
 	PLAYER_W = -1,
@@ -19,81 +20,80 @@ enum Piece {	//オセロの駒の種類
 	CANTURN = 3,
 	CHOSEN_CAN = 6,
 	CHOSEN_NO = 10
-} piece[8][8];
+} piece[OSERO_FIELD][OSERO_FIELD];
 
 void show(int);
 void get_cursor(int*, int*, int*, int*);
-void piece_flip(int ,int, int*);
-void piece_check(int ,int, int*);
+void piece_check(int, int, int*);
+void piece_flip(int, int, int*);
 
 int main(){
-	int player_x = 0;
-	int player_y = 0;
+	int player_x = 1;
+	int player_y = 1;
 	int turn = PLAYER_B;
 	int no_black = 0, no_white = 0;
 
-	for(int i=0; i<8; i++){
-		for(int r=0; r<8; r++){
-			piece[i][r] = NOTHING;
+	for(int y=1; y<OSERO_FIELD-1; y++){
+		for(int x=1; x<OSERO_FIELD-1; x++){
+			piece[y][x] = NOTHING;
 		}
 	}
-	piece[3][3] = PLAYER_W;
-	piece[3][4] = PLAYER_B;
-	piece[4][3] = PLAYER_B;
 	piece[4][4] = PLAYER_W;
-	for(int i=0; i<8; i++){
-		for(int r=0; r<8; r++)
-			piece_check(i, r, &turn);
+	piece[4][5] = PLAYER_B;
+	piece[5][4] = PLAYER_B;
+	piece[5][5] = PLAYER_W;
+	for(int y=1; y<OSERO_FIELD-2; y++){
+		for(int x=1; x<OSERO_FIELD-2; x++)
+			piece_check(y, x, &turn);
 	}
 
 	for(int count=0; count<200;){
 		piece[player_y][player_x] *= 2;	//playerの位置の駒をCHOSENに
+
 		show(turn);
-		printf("%d", count);
+		printf("現在のターン：");
+			if(turn == PLAYER_B)
+		printf("黒\n");
+			if(turn == PLAYER_W)
+		printf("白\n");
+
 		piece[player_y][player_x] /= 2;	//playerの駒をもとに
 
 		get_cursor(&player_y, &player_x, &turn, &count);
-		/*if(*IsThereCanTurn == FALSE && IsFinalTurn == TRUE)
-			count = 199;
-		if(*IsThereCanTurn == FALSE){
-			count++;
-			turn*=-1;
-			IsFinalTurn = TRUE;
-			continue;
-		}
-		*IsThereCanTurn = FALSE;*/
 	}
-	for(int i=0; i<8; i++){
-		for(int r=0; r<8; r++){
+	for(int i=1; i<OSERO_FIELD-2; i++){
+		for(int r=1; r<-1; r++){
 			if(piece[i][r] == PLAYER_B)
 				no_black++;
-			else if(piece[i][r] == PLAYER_W)
+			if(piece[i][r] == PLAYER_W)
 				no_white++;
 		}
 	}
 	show(turn);
-	printf( "\n" "黒：%d\t白：%d\n" "で", no_black, no_white);
-	if(no_black > no_white)
+	printf( "\n" "黒：%2d\t白：%2dで", no_black, no_white);
+
+	if(no_black >  no_white)
 		printf("黒の勝ち!!\n");
+
 	if(no_black == no_white)
 		printf("引き分け！？\n");
-	if(no_black < no_white)
+
+	if(no_black <  no_white)
 		printf("白の勝ち!!\n");
+
+	printf("なにかキーを入力してください。");
 	getch();
 }
 
 void show(int turn){
 	system("cls");
 	printf("The オセロ！\n\n");
-	printf("＋");
-	for(int i=0; i<8; i++)
-		printf("--");
-	printf("＋\n");
+	printf("＋----------------＋\n");
 
-	for(int i=0; i<8; i++){
+	for(int y=1; y <= OSERO_FIELD-2; y++){
 		printf("｜");
-		for(int r=0; r<8; r++){
-			switch(piece[i][r]){
+		for(int x=1; x <= OSERO_FIELD-2; x++){
+			switch(piece[y][x]){
 				case CHOSEN_W:
 					printf("★");
 					break;
@@ -123,41 +123,34 @@ void show(int turn){
 		printf("｜\n");
 	}
 
-	printf("＋");
-	for(int i=0; i<8; i++)
-		printf("--");
-	printf("＋\n\n");
-
-	printf("現在のターン：");
-			if(turn == PLAYER_B)
-		printf("黒\n");
-			if(turn == PLAYER_W)
-		printf("白\n");
+	printf("＋----------------＋\n\n");
 }
 
 void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 	CONTINUE:
 	switch(getch()){
 		case KB_UP:
-			if(0<*player_y)	*player_y-=1;
+			if(1<*player_y)	*player_y-=1;
 			break;
 		case KB_LEFT:
-			if(0<*player_x)	*player_x-=1;
+			if(1<*player_x)	*player_x-=1;
 			break;
 		case KB_RIGHT:
-			if(*player_x<7)	*player_x+=1;
+			if(*player_x<OSERO_FIELD-2)	*player_x+=1;
 			break;
 		case KB_DOWN:
-			if(*player_y<7)	*player_y+=1;
+			if(*player_y<OSERO_FIELD-2)	*player_y+=1;
 			break;
 		case KB_ENTER:
-			if(piece[*player_y][*player_x] == CANTURN)
+			if(piece[*player_y][*player_x] == CANTURN){
 				piece_flip(*player_y, *player_x, turn);
-			for(int i=0; i<8; i++){
-				for(int r=0; r<8; r++)
-					piece_check(i, r, turn);
+
+				for(int i=1; i<=OSERO_FIELD-2; i++){
+					for(int r=1; r<=OSERO_FIELD-2; r++)
+						piece_check(i, r, turn);
+				}
+				*count+=1;
 			}
-			*count+=1;
 			break;
 		case EXIT:
 			printf("\n緊急終了！！\n");
@@ -167,81 +160,25 @@ void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 }
 
 void piece_check(int point_y, int point_x, int *turn){
-	//WANT もっと短く！
+	int dir_x[] = {0, 0, -1, 1, -1, 1, -1, 1};	//探査方向（８方向）
+	int dir_y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
 
 	if(piece[point_y][point_x] == CANTURN)
-		piece[point_y][point_x] = NOTHING;
+		piece[point_y][point_x] = NOTHING;	//CANTURNの駒を一時的にすべて消す
 
 	if(piece[point_y][point_x] == NOTHING){
-		if(1 < point_y){
-			for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
-				if(piece[point_y-i-1][point_x] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
+		for(int dir_index=0; dir_index<8; dir_index++){	//dir_index...dir_x(y)の方向決め
+			int moved_y = dir_y[dir_index];
+			int moved_x = dir_x[dir_index];
 
-		if(point_y < 6){
-			for(int i=1; piece[point_y+i][point_x] == -*turn; i++){	//下
-				if(piece[point_y+i+1][point_x] == *turn){
+			while(piece[point_y + moved_y][point_x + moved_x] == -*turn){	//進んだ先が相手の駒だったら
+				if(piece[point_y + (moved_y + dir_y[dir_index])]
+						[point_x + (moved_x + dir_x[dir_index])] == *turn){	//かつ、その１つ先が自分の駒だったら
 					piece[point_y][point_x] = CANTURN;
 					break;
 				}
-			}
-		}
-
-		if(1 < point_x){
-			for(int i=1; piece[point_y][point_x-i] == -*turn; i++){	//左
-				if(piece[point_y][point_x-i-1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
-
-		if(point_x < 6){
-			for(int i=1; piece[point_y][point_x+i] == -*turn; i++){		//右
-				if(piece[point_y][point_x+i+1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
-
-		if(1 < point_y && 1 < point_x){
-			for(int i=1; piece[point_y-i][point_x-i] == -*turn; i++){		//左上
-				if(piece[point_y-i-1][point_x-i-1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
-
-		if(1 < point_y && point_x < 6){
-			for(int i=1; piece[point_y-i][point_x+i] == -*turn; i++){		//右上
-				if(piece[point_y-i-1][point_x+i+1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
-
-		if(point_y < 6 && 1 < point_x){
-			for(int i=1; piece[point_y+i][point_x-i] == -*turn; i++){		//左下
-				if(piece[point_y+i+1][point_x-i-1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
-			}
-		}
-
-		if(point_y < 6 && point_x < 6){
-			for(int i=1; piece[point_y+i][point_x+i] == -*turn; i++){		//右下
-				if(piece[point_y+i+1][point_x+i+1] == *turn){
-					piece[point_y][point_x] = CANTURN;
-					break;
-				}
+			moved_y += dir_y[dir_index];
+			moved_x += dir_x[dir_index];
 			}
 		}
 	}
@@ -249,104 +186,35 @@ void piece_check(int point_y, int point_x, int *turn){
 
 void piece_flip(int point_y, int point_x, int *turn){
 	int tmp;
-	//WANT もっと短く！
+	int dir_x[] = {0, 0, -1, 1, -1, 1, -1, 1};	//探査方向（８方向）
+	int dir_y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
 
-	tmp = 0;
-	if(1 < point_y){
-		for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
-			if(piece[point_y-i-1][point_x] == *turn){
-				tmp = i;
+	for(int dir_num=0; dir_num<8; dir_num++){	//dir_num...dir_x,y方向へ進む数
+		int moved_y = dir_y[dir_num];
+		int moved_x = dir_x[dir_num];
+		tmp = 0;
+		while(piece[point_y+moved_y][point_x+moved_x] == -*turn){	//進んだ先が相手の駒である間
+			if(piece[point_y + (moved_y + dir_y[dir_num])]			//その１つ先が自分の駒だったら
+					[point_x + (moved_x + dir_x[dir_num])] == *turn){
+				if(moved_y != 0)			//現時点での相手の駒の数をtmpに代入(move_x,yのどちらか)
+					tmp = abs(moved_y);		//abs関数...絶対値を求める
+				else
+					tmp = abs(moved_x);
 				break;
 			}
+			moved_y += dir_y[dir_num];
+			moved_x += dir_x[dir_num];
 		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y-i][point_x] *= -1;
-	}
 
-	tmp = 0;
-	if(point_y < 6){
-		for(int i=1; piece[point_y+i][point_x] == -*turn; i++){		//下
-			if(piece[point_y+i+1][point_x] == *turn){
-				tmp = i;
-				break;
-			}
+		moved_y = dir_y[dir_num];
+		moved_x = dir_x[dir_num];
+		while(abs(moved_y) <= tmp && abs(moved_x) <= tmp){	//tmpの数だけ、相手の駒を反転
+			piece[point_y+moved_y][point_x+moved_x] *= -1;
+			moved_y += dir_y[dir_num];
+			moved_x += dir_x[dir_num];
 		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y+i][point_x] *= -1;
 	}
-
-	tmp = 0;
-	if(1 < point_x){
-		for(int i=1; piece[point_y][point_x-i] == -*turn && 0<point_x-i; i++){	//左
-			if(piece[point_y][point_x-i-1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y][point_x-i] *= -1;
-	}
-
-	tmp = 0;
-	if(point_x < 6){
-		for(int i=1; piece[point_y][point_x+i] == -*turn && point_x+i<7; i++){	//右
-			if(piece[point_y][point_x+i+1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y][point_x+i] *= -1;
-	}
-
-	tmp = 0;
-	if(1 < point_y && 1 < point_x){
-		for(int i=1; piece[point_y-i][point_x-i] == -*turn && 0<point_x-i; i++){//左上
-			if(piece[point_y-i-1][point_x-i-1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y-i][point_x-i] *= -1;
-	}
-
-	tmp = 0;
-	if(1 < point_y && point_x < 6){
-		for(int i=1; piece[point_y-i][point_x+i] == -*turn && point_x+i<7; i++){//右上
-			if(piece[point_y-i-1][point_x+i+1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y-i][point_x+i] *= -1;
-	}
-
-	tmp = 0;
-	if(point_y < 6 && 1 < point_x){
-		for(int i=1; piece[point_y+i][point_x-i] == -*turn && 0<point_x-i; i++){//左下
-			if(piece[point_y+i+1][point_x-i-1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y+i][point_x-i] *= -1;
-	}
-
-	tmp = 0;
-	if(point_y < 6 && point_x < 6){
-		for(int i=1; piece[point_y+i][point_x+i] == -*turn && point_x+i<7; i++){//右下
-			if(piece[point_y+i+1][point_x+i+1] == *turn){
-				tmp = i;
-				break;
-			}
-		}
-		for(int i=1; i<=tmp; i++)
-			piece[point_y+i][point_x+i] *= -1;
-	}
-	piece[point_y][point_x] = *turn;
-	*turn *= -1;
+	piece[point_y][point_x] = *turn;	//コマを置いた場所の反転
+	*turn *= -1;		//白黒の交代
 }
 

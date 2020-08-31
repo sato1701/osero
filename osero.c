@@ -9,7 +9,6 @@
 #define KB_RIGHT 0x004d
 #define KB_ENTER 0x000D
 #define EXIT 0x001b
-#define OSERO_FIELD 10
 
 enum Piece {	//オセロの駒の種類
 	PLAYER_W = -1,
@@ -20,59 +19,60 @@ enum Piece {	//オセロの駒の種類
 	CANTURN = 3,
 	CHOSEN_CAN = 6,
 	CHOSEN_NO = 10
-} piece[OSERO_FIELD][OSERO_FIELD];
+} piece[8][8];
 
 void show(int);
 void get_cursor(int*, int*, int*, int*);
 void piece_flip(int ,int, int*);
 void piece_check(int ,int, int*);
-void piece_check_2(int, int, int*, _Bool);
 
 int main(){
-	int player_x = 1;
-	int player_y = 1;
+	int player_x = 0;
+	int player_y = 0;
 	int turn = PLAYER_B;
 	int no_black = 0, no_white = 0;
 
-	for(int i=1; i<OSERO_FIELD-1; i++){
-		for(int r=1; r<OSERO_FIELD-1; r++){
+	for(int i=0; i<8; i++){
+		for(int r=0; r<8; r++){
 			piece[i][r] = NOTHING;
 		}
 	}
+	piece[3][3] = PLAYER_W;
+	piece[3][4] = PLAYER_B;
+	piece[4][3] = PLAYER_B;
 	piece[4][4] = PLAYER_W;
-	piece[4][5] = PLAYER_B;
-	piece[5][4] = PLAYER_B;
-	piece[5][5] = PLAYER_W;
-	for(int i=1; i<OSERO_FIELD-2; i++){
-		for(int r=1; r<OSERO_FIELD-2; r++)
-			piece_check_2(i, r, &turn, FALSE);
+	for(int i=0; i<8; i++){
+		for(int r=0; r<8; r++)
+			piece_check(i, r, &turn);
 	}
 
 	for(int count=0; count<200;){
 		piece[player_y][player_x] *= 2;	//playerの位置の駒をCHOSENに
-
 		show(turn);
-		printf("現在のターン：");
-			if(turn == PLAYER_B)
-		printf("黒\n");
-			if(turn == PLAYER_W)
-		printf("白\n");
-
 		printf("%d", count);
 		piece[player_y][player_x] /= 2;	//playerの駒をもとに
 
 		get_cursor(&player_y, &player_x, &turn, &count);
+		/*if(*IsThereCanTurn == FALSE && IsFinalTurn == TRUE)
+			count = 199;
+		if(*IsThereCanTurn == FALSE){
+			count++;
+			turn*=-1;
+			IsFinalTurn = TRUE;
+			continue;
+		}
+		*IsThereCanTurn = FALSE;*/
 	}
-	for(int i=1; i<OSERO_FIELD-2; i++){
-		for(int r=1; r<-1; r++){
+	for(int i=0; i<8; i++){
+		for(int r=0; r<8; r++){
 			if(piece[i][r] == PLAYER_B)
 				no_black++;
-			if(piece[i][r] == PLAYER_W)
+			else if(piece[i][r] == PLAYER_W)
 				no_white++;
 		}
 	}
 	show(turn);
-	printf( "\n" "黒：%2d\t白：%2dで", no_black, no_white);
+	printf( "\n" "黒：%d\t白：%d\n" "で", no_black, no_white);
 	if(no_black > no_white)
 		printf("黒の勝ち!!\n");
 	if(no_black == no_white)
@@ -90,9 +90,9 @@ void show(int turn){
 		printf("--");
 	printf("＋\n");
 
-	for(int i=1; i<=OSERO_FIELD-2; i++){
+	for(int i=0; i<8; i++){
 		printf("｜");
-		for(int r=1; r<=OSERO_FIELD-2; r++){
+		for(int r=0; r<8; r++){
 			switch(piece[i][r]){
 				case CHOSEN_W:
 					printf("★");
@@ -127,32 +127,37 @@ void show(int turn){
 	for(int i=0; i<8; i++)
 		printf("--");
 	printf("＋\n\n");
+
+	printf("現在のターン：");
+			if(turn == PLAYER_B)
+		printf("黒\n");
+			if(turn == PLAYER_W)
+		printf("白\n");
 }
 
 void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 	CONTINUE:
 	switch(getch()){
 		case KB_UP:
-			if(1<*player_y)	*player_y-=1;
+			if(0<*player_y)	*player_y-=1;
 			break;
 		case KB_LEFT:
-			if(1<*player_x)	*player_x-=1;
+			if(0<*player_x)	*player_x-=1;
 			break;
 		case KB_RIGHT:
-			if(*player_x<OSERO_FIELD-2)	*player_x+=1;
+			if(*player_x<7)	*player_x+=1;
 			break;
 		case KB_DOWN:
-			if(*player_y<OSERO_FIELD-2)	*player_y+=1;
+			if(*player_y<7)	*player_y+=1;
 			break;
 		case KB_ENTER:
-			if(piece[*player_y][*player_x] == CANTURN){
-				piece_check_2(*player_y, *player_x, turn, TRUE);
-				for(int i=1; i<=OSERO_FIELD-2; i++){
-					for(int r=1; r<=OSERO_FIELD-2; r++)
-						piece_check_2(i, r, turn, FALSE);
-				}
-				*count+=1;
+			if(piece[*player_y][*player_x] == CANTURN)
+				piece_flip(*player_y, *player_x, turn);
+			for(int i=0; i<8; i++){
+				for(int r=0; r<8; r++)
+					piece_check(i, r, turn);
 			}
+			*count+=1;
 			break;
 		case EXIT:
 			printf("\n緊急終了！！\n");
@@ -161,49 +166,187 @@ void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 	}
 }
 
-void piece_check_2(int point_y, int point_x, int *turn, _Bool IsFlip){
-	int tmp;
-	int dir_x[] = {0, 0, -1, 1, -1, 1, -1, 1};
-	int dir_y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
+void piece_check(int point_y, int point_x, int *turn){
+	//WANT もっと短く！
 
-	if(IsFlip == FALSE){
-		if(piece[point_y][point_x] == CANTURN)
-			piece[point_y][point_x] = NOTHING;
-	}
-	if(piece[point_y][point_x] == NOTHING || IsFlip == TRUE){
-		for(int k=0; k<8; k++){
-			int i=dir_y[k];
-			int r=dir_x[k];
-			tmp = 0;
-			while(piece[point_y+i][point_x+r] == -*turn){	//上
-				if(piece[point_y+(i+dir_y[k])][point_x+(r+dir_x[k])] == *turn){
-					if(IsFlip == TRUE){
-						if(i != 0)
-							tmp = abs(i);
-						else
-							tmp = abs(r);
-					}else
-						piece[point_y][point_x] = CANTURN;
+	if(piece[point_y][point_x] == CANTURN)
+		piece[point_y][point_x] = NOTHING;
+
+	if(piece[point_y][point_x] == NOTHING){
+		if(1 < point_y){
+			for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
+				if(piece[point_y-i-1][point_x] == *turn){
+					piece[point_y][point_x] = CANTURN;
 					break;
 				}
-				i+=dir_y[k];
-				r+=dir_x[k];
 			}
+		}
 
-			if(IsFlip == TRUE){
-				i=dir_y[k];
-				r=dir_x[k];
-				while(abs(i)<=tmp && abs(r)<=tmp){
-					piece[point_y+i][point_x+r] *= -1;
-					i+=dir_y[k];
-					r+=dir_x[k];
+		if(point_y < 6){
+			for(int i=1; piece[point_y+i][point_x] == -*turn; i++){	//下
+				if(piece[point_y+i+1][point_x] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(1 < point_x){
+			for(int i=1; piece[point_y][point_x-i] == -*turn; i++){	//左
+				if(piece[point_y][point_x-i-1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(point_x < 6){
+			for(int i=1; piece[point_y][point_x+i] == -*turn; i++){		//右
+				if(piece[point_y][point_x+i+1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(1 < point_y && 1 < point_x){
+			for(int i=1; piece[point_y-i][point_x-i] == -*turn; i++){		//左上
+				if(piece[point_y-i-1][point_x-i-1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(1 < point_y && point_x < 6){
+			for(int i=1; piece[point_y-i][point_x+i] == -*turn; i++){		//右上
+				if(piece[point_y-i-1][point_x+i+1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(point_y < 6 && 1 < point_x){
+			for(int i=1; piece[point_y+i][point_x-i] == -*turn; i++){		//左下
+				if(piece[point_y+i+1][point_x-i-1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
+				}
+			}
+		}
+
+		if(point_y < 6 && point_x < 6){
+			for(int i=1; piece[point_y+i][point_x+i] == -*turn; i++){		//右下
+				if(piece[point_y+i+1][point_x+i+1] == *turn){
+					piece[point_y][point_x] = CANTURN;
+					break;
 				}
 			}
 		}
 	}
-	if(IsFlip == TRUE){
-		piece[point_y][point_x] = *turn;
-		*turn *= -1;
+}
+
+void piece_flip(int point_y, int point_x, int *turn){
+	int tmp;
+	//WANT もっと短く！
+
+	tmp = 0;
+	if(1 < point_y){
+		for(int i=1; piece[point_y-i][point_x] == -*turn; i++){	//上
+			if(piece[point_y-i-1][point_x] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y-i][point_x] *= -1;
 	}
+
+	tmp = 0;
+	if(point_y < 6){
+		for(int i=1; piece[point_y+i][point_x] == -*turn; i++){		//下
+			if(piece[point_y+i+1][point_x] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y+i][point_x] *= -1;
+	}
+
+	tmp = 0;
+	if(1 < point_x){
+		for(int i=1; piece[point_y][point_x-i] == -*turn && 0<point_x-i; i++){	//左
+			if(piece[point_y][point_x-i-1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y][point_x-i] *= -1;
+	}
+
+	tmp = 0;
+	if(point_x < 6){
+		for(int i=1; piece[point_y][point_x+i] == -*turn && point_x+i<7; i++){	//右
+			if(piece[point_y][point_x+i+1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y][point_x+i] *= -1;
+	}
+
+	tmp = 0;
+	if(1 < point_y && 1 < point_x){
+		for(int i=1; piece[point_y-i][point_x-i] == -*turn && 0<point_x-i; i++){//左上
+			if(piece[point_y-i-1][point_x-i-1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y-i][point_x-i] *= -1;
+	}
+
+	tmp = 0;
+	if(1 < point_y && point_x < 6){
+		for(int i=1; piece[point_y-i][point_x+i] == -*turn && point_x+i<7; i++){//右上
+			if(piece[point_y-i-1][point_x+i+1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y-i][point_x+i] *= -1;
+	}
+
+	tmp = 0;
+	if(point_y < 6 && 1 < point_x){
+		for(int i=1; piece[point_y+i][point_x-i] == -*turn && 0<point_x-i; i++){//左下
+			if(piece[point_y+i+1][point_x-i-1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y+i][point_x-i] *= -1;
+	}
+
+	tmp = 0;
+	if(point_y < 6 && point_x < 6){
+		for(int i=1; piece[point_y+i][point_x+i] == -*turn && point_x+i<7; i++){//右下
+			if(piece[point_y+i+1][point_x+i+1] == *turn){
+				tmp = i;
+				break;
+			}
+		}
+		for(int i=1; i<=tmp; i++)
+			piece[point_y+i][point_x+i] *= -1;
+	}
+	piece[point_y][point_x] = *turn;
+	*turn *= -1;
 }
 

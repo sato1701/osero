@@ -24,7 +24,7 @@ enum Piece {	//ƒIƒZƒ‚Ì‹î‚Ìí—Ş
 
 void show(int);
 void get_cursor(int*, int*, int*, int*);
-void piece_check(int, int, int*);
+_Bool piece_check(int, int, int*, _Bool);
 void piece_flip(int, int, int*);
 
 int main(){
@@ -44,7 +44,7 @@ int main(){
 	piece[5][5] = PLAYER_W;
 	for(int y=1; y<OSERO_FIELD-2; y++){
 		for(int x=1; x<OSERO_FIELD-2; x++)
-			piece_check(y, x, &turn);
+			piece_check(y, x, &turn, FALSE);
 	}
 
 	for(int count=0; count<200;){
@@ -61,11 +61,11 @@ int main(){
 
 		get_cursor(&player_y, &player_x, &turn, &count);
 	}
-	for(int i=1; i<OSERO_FIELD-2; i++){
-		for(int r=1; r<-1; r++){
-			if(piece[i][r] == PLAYER_B)
+	for(int x=1; x<OSERO_FIELD-2; x++){
+		for(int y=1; y<OSERO_FIELD-2; y++){
+			if(piece[x][y] == PLAYER_B)
 				no_black++;
-			if(piece[i][r] == PLAYER_W)
+			if(piece[x][y] == PLAYER_W)
 				no_white++;
 		}
 	}
@@ -143,13 +143,17 @@ void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 			break;
 		case KB_ENTER:
 			if(piece[*player_y][*player_x] == CANTURN){
-				piece_flip(*player_y, *player_x, turn);
+				_Bool CheckPassFlag = TRUE;
+				do{
+					piece_flip(*player_y, *player_x, turn);
 
-				for(int i=1; i<=OSERO_FIELD-2; i++){
-					for(int r=1; r<=OSERO_FIELD-2; r++)
-						piece_check(i, r, turn);
-				}
-				*count+=1;
+					for(int i=1; i<=OSERO_FIELD-2; i++){
+						for(int r=1; r<=OSERO_FIELD-2; r++)
+							CheckPassFlag = piece_check(i, r, turn, CheckPassFlag);
+					}
+					*count+=1;
+					if(CheckPassFlag)	*turn *= -1;
+				}while(CheckPassFlag && *count <= 199);
 			}
 			break;
 		case EXIT:
@@ -159,7 +163,7 @@ void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 	}
 }
 
-void piece_check(int point_y, int point_x, int *turn){
+_Bool piece_check(int point_y, int point_x, int *turn, _Bool CheckPassFlag){
 	int dir_x[] = {0, 0, -1, 1, -1, 1, -1, 1};	//’T¸•ûŒüi‚W•ûŒüj
 	int dir_y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
 
@@ -175,6 +179,7 @@ void piece_check(int point_y, int point_x, int *turn){
 				if(piece[point_y + (moved_y + dir_y[dir_index])]
 						[point_x + (moved_x + dir_x[dir_index])] == *turn){	//‚©‚ÂA‚»‚Ì‚P‚Âæ‚ª©•ª‚Ì‹î‚¾‚Á‚½‚ç
 					piece[point_y][point_x] = CANTURN;
+					CheckPassFlag = FALSE;
 					break;
 				}
 			moved_y += dir_y[dir_index];
@@ -182,6 +187,7 @@ void piece_check(int point_y, int point_x, int *turn){
 			}
 		}
 	}
+	return CheckPassFlag;
 }
 
 void piece_flip(int point_y, int point_x, int *turn){

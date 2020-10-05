@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <conio.h>
-#include <stdlib.h>
 #include <windows.h>
 
 #define KB_UP 0x0048	//キーボード入力判定用
@@ -23,7 +22,8 @@ enum Piece {	//オセロの駒の種類
 } piece[OSERO_FIELD][OSERO_FIELD];
 
 void show(int);
-void get_cursor(int*, int*, int*, int*);
+void set_up();
+_Bool get_cursor(int*, int*, int*);
 _Bool piece_check(int, int, int*, _Bool);
 void piece_flip(int, int, int*);
 
@@ -31,23 +31,15 @@ int main(){
 	int player_x = 1;
 	int player_y = 1;
 	int turn = PLAYER_B;
-	int no_black = 0, no_white = 0;
 
-	for(int y=1; y<OSERO_FIELD-1; y++){
-		for(int x=1; x<OSERO_FIELD-1; x++){
-			piece[y][x] = NOTHING;
-		}
-	}
-	piece[4][4] = PLAYER_W;
-	piece[4][5] = PLAYER_B;
-	piece[5][4] = PLAYER_B;
-	piece[5][5] = PLAYER_W;
-	for(int y=1; y<OSERO_FIELD-2; y++){
-		for(int x=1; x<OSERO_FIELD-2; x++)
+	set_up();
+
+	for(int y=1; y <= OSERO_FIELD-2; y++){
+		for(int x=1; x <= OSERO_FIELD-2; x++)
 			piece_check(y, x, &turn, FALSE);
 	}
 
-	for(int count=0; count<200;){
+	do{
 		piece[player_y][player_x] *= 2;	//playerの位置の駒をCHOSENに
 
 		show(turn);
@@ -59,10 +51,12 @@ int main(){
 
 		piece[player_y][player_x] /= 2;	//playerの駒をもとに
 
-		get_cursor(&player_y, &player_x, &turn, &count);
-	}
-	for(int x=1; x<OSERO_FIELD-2; x++){
-		for(int y=1; y<OSERO_FIELD-2; y++){
+	}while(get_cursor(&player_y, &player_x, &turn));
+
+	int no_black = 0, no_white = 0;
+
+	for(int x=1; x <= OSERO_FIELD-2; x++){
+		for(int y=1; y <= OSERO_FIELD-2; y++){
 			if(piece[x][y] == PLAYER_B)
 				no_black++;
 			if(piece[x][y] == PLAYER_W)
@@ -83,6 +77,21 @@ int main(){
 
 	printf("なにかキーを入力してください。");
 	getch();
+}
+
+void set_up(){
+	for(int y=1; y <= OSERO_FIELD-2; y++){
+		for(int x=1; x <= OSERO_FIELD-2; x++){
+			piece[y][x] = NOTHING;
+		}
+	}
+	piece[4][4] = PLAYER_W;
+	piece[4][5] = PLAYER_B;
+	piece[5][4] = PLAYER_B;
+	piece[5][5] = PLAYER_W;
+
+	printf("----------------");
+
 }
 
 void show(int turn){
@@ -126,7 +135,8 @@ void show(int turn){
 	printf("＋----------------＋\n\n");
 }
 
-void get_cursor(int *player_y, int *player_x, int *turn, int *count){
+_Bool get_cursor(int *player_y, int *player_x, int *turn){
+	static _Bool EndFlag = FALSE;
 	CONTINUE:
 	switch(getch()){
 		case KB_UP:
@@ -143,24 +153,29 @@ void get_cursor(int *player_y, int *player_x, int *turn, int *count){
 			break;
 		case KB_ENTER:
 			if(piece[*player_y][*player_x] == CANTURN){
-				_Bool CheckPassFlag = TRUE;
+				_Bool PassFlag = TRUE;
 				do{
 					piece_flip(*player_y, *player_x, turn);
 
 					for(int i=1; i<=OSERO_FIELD-2; i++){
 						for(int r=1; r<=OSERO_FIELD-2; r++)
-							CheckPassFlag = piece_check(i, r, turn, CheckPassFlag);
+							PassFlag = piece_check(i, r, turn, PassFlag);
 					}
-					*count+=1;
-					if(CheckPassFlag)	*turn *= -1;
-				}while(CheckPassFlag && *count <= 199);
+					if(PassFlag && EndFlag) return FALSE;
+					if(PassFlag){
+						*turn *= -1;
+						EndFlag = TRUE;
+					}
+				}while(PassFlag);
 			}
 			break;
 		case EXIT:
 			printf("\n緊急終了！！\n");
+			Sleep(2000);
 			exit(0);
 		default: goto CONTINUE;
 	}
+	return TRUE;
 }
 
 _Bool piece_check(int point_y, int point_x, int *turn, _Bool CheckPassFlag){
